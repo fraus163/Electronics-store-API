@@ -2,6 +2,7 @@ package com.fraus.spring.service;
 
 import com.fraus.spring.cart.repository.CartRepository;
 import com.fraus.spring.cart.repository.entity.Cart;
+import com.fraus.spring.globalException.exception.InvalidUserException;
 import com.fraus.spring.order.mapper.OrderMapper;
 import com.fraus.spring.order.repository.OrderRepository;
 import com.fraus.spring.order.repository.entity.Order;
@@ -13,25 +14,30 @@ import com.fraus.spring.shop.repository.entity.BrandType;
 import com.fraus.spring.shop.repository.entity.Product;
 import com.fraus.spring.shop.repository.entity.ProductType;
 import com.fraus.spring.user.repository.UserRepository;
+import com.fraus.spring.user.repository.entity.Role;
 import com.fraus.spring.user.repository.entity.User;
 import com.fraus.spring.user.repository.entity.UserRole;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class OrderServiceTest {
@@ -53,8 +59,52 @@ public class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
+    @AfterEach
+    void clearContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    void createSecurityContext(String username) {
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        when(authentication.getName()).thenReturn(username);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+    }
+
+    User createUser(
+            Long id,
+            String username,
+            String email,
+            String password
+    ) {
+        Role role = new Role(
+                1,
+                UserRole.USER
+        );
+
+        return new User(
+                id,
+                username,
+                email,
+                password,
+                Set.of(role)
+        );
+    }
+
     @Test
-    void shouldCreateOrder() {
+    void shouldCreateOrder() throws InvalidUserException {
+        User user = createUser(
+                1L,
+                "user",
+                "user@gmail.com",
+                "user"
+        );
+
+        createSecurityContext(user.getUsername());
+
         Product product = new Product(
                 1L,
                 BrandType.INTEL,
@@ -67,12 +117,13 @@ public class OrderServiceTest {
 
         Cart cart = new Cart(
                 1L,
-                new User(),
+                user,
                 product,
                 1
         );
 
-
+        when(userRepository.findUserByUsername(user.getUsername()))
+                .thenReturn(Optional.of(user));
         when(cartRepository.findById(1L))
                 .thenReturn(Optional.of(cart));
         when(productRepository.findById(1L))
@@ -82,8 +133,6 @@ public class OrderServiceTest {
 
         verify(orderRepository)
                 .save(any());
-        verify(orderRepository)
-                .save(any());
         verify(productRepository)
                 .save(any());
         verify(cartRepository)
@@ -91,7 +140,15 @@ public class OrderServiceTest {
     }
 
     @Test
-    void shouldDeleteOrder() {
+    void shouldDeleteOrder() throws InvalidUserException {
+        User user = createUser(
+                1L,
+                "user",
+                "user@gmail.com",
+                "user"
+        );
+        createSecurityContext(user.getUsername());
+
         Product product = new Product(
                 1L,
                 BrandType.INTEL,
@@ -104,13 +161,15 @@ public class OrderServiceTest {
 
         Order order = new Order(
                 1L,
-                new User(),
+                user,
                 product,
                 1,
                 LocalDateTime.now(),
                 OrderStatus.CREATED
         );
 
+        when(userRepository.findUserByUsername(user.getUsername()))
+                .thenReturn(Optional.of(user));
         when(orderRepository.findById(1L))
                 .thenReturn(Optional.of(order));
         when(productRepository.findById(product.getId()))
@@ -165,8 +224,14 @@ public class OrderServiceTest {
     }
 
     @Test
-    void shouldFindAllOrdersByUserId() {
-        User user = new User();
+    void shouldFindAllOrdersByUser() {
+        User user = createUser(
+                1L,
+                "user",
+                "user@gmail.com",
+                "user"
+        );
+        createSecurityContext(user.getUsername());
 
         Order order = new Order(
                 1L,
@@ -178,20 +243,20 @@ public class OrderServiceTest {
         );
 
         OrderDto orderDto = new OrderDto(
-                null,
+                1L,
                 order.getQuantity(),
                 order.getCreated_at(),
                 order.getStatus()
         );
 
-        when(userRepository.findById(1L))
+        when(userRepository.findUserByUsername(user.getUsername()))
                 .thenReturn(Optional.of(user));
         when(orderRepository.findAllByUser(user))
                 .thenReturn(List.of(order));
         when(orderMapper.toDto(order))
                 .thenReturn(orderDto);
 
-        List<OrderDto> result = orderService.findAllOrdersByUserId(1L);
+        List<OrderDto> result = orderService.findAllOrdersByUser();
 
         assertEquals(1, result.getFirst().quantity());
     }
@@ -235,5 +300,73 @@ public class OrderServiceTest {
                 .thenReturn(Optional.of(order));
 
         assertThrows(IllegalArgumentException.class, () -> orderService.completeOrder(1L));
+    }
+
+    @Test
+    void shouldThrowWhenInvalidUserWantsToCreateOrder() {
+        User user = createUser(
+                1L,
+                "user",
+                "user@gmail.com",
+                "user"
+        );
+
+        User invalidUser = createUser(
+                2L,
+                "user2",
+                "user2@gmail.com",
+                "user2"
+        );
+
+        createSecurityContext(invalidUser.getUsername());
+
+        Cart cart = new Cart(
+                1L,
+                user,
+                new Product(),
+                1
+        );
+
+        when(cartRepository.findById(1L))
+                .thenReturn(Optional.of(cart));
+        when(userRepository.findUserByUsername(invalidUser.getUsername()))
+                .thenReturn(Optional.of(invalidUser));
+
+        assertThrows(InvalidUserException.class, () -> orderService.createOrder(1L));
+    }
+
+    @Test
+    void shouldThrowWhenInvalidUserWantsToDeleteOrder() {
+        User user = createUser(
+                1L,
+                "user",
+                "user@gmail.com",
+                "user"
+        );
+
+        User invalidUser = createUser(
+                2L,
+                "user2",
+                "user2@gmail.com",
+                "user2"
+        );
+
+        createSecurityContext(invalidUser.getUsername());
+
+        Order order = new Order(
+                1L,
+                user,
+                new Product(),
+                1,
+                LocalDateTime.now(),
+                OrderStatus.COMPLETED
+        );
+
+        when(orderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(userRepository.findUserByUsername(invalidUser.getUsername()))
+                .thenReturn(Optional.of(invalidUser));
+
+        assertThrows(InvalidUserException.class, () -> orderService.deleteOrder(1L));
     }
 }

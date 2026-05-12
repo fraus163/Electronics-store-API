@@ -39,8 +39,7 @@ public class CartControllerTest {
     void shouldCreateCart() throws Exception {
         CartDto cartDto = new CartDto(
                 1L,
-                1L,
-                10
+                1
         );
 
         mockMvc.perform(post("/api/cart")
@@ -64,17 +63,15 @@ public class CartControllerTest {
     @Test
     void shouldUpdateQuantity() throws Exception {
         QuantityRequest quantityRequest = new QuantityRequest(
-          1L,
-          1
+                1
         );
 
         CartDto cartDto = new CartDto(
                 1L,
-                1L,
                 1
         );
 
-        when(cartService.updateQuantity(any()))
+        when(cartService.updateQuantity(1L, any()))
                 .thenReturn(cartDto);
         mockMvc.perform(patch("/api/cart")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -82,13 +79,12 @@ public class CartControllerTest {
                 .andExpect(status().isOk());
 
         verify(cartService)
-                .updateQuantity(any());
+                .updateQuantity(1L, any());
     }
 
     @Test
     void shouldReturn404WhenQuantityIsNegative() throws Exception {
         QuantityRequest quantityRequest = new QuantityRequest(
-                1L,
                 -1
         );
 
@@ -102,7 +98,6 @@ public class CartControllerTest {
     void shouldReturn400WhenUserIdIsNull() throws Exception {
         CartDto cartDto = new CartDto(
                 1L,
-                null,
                 1
         );
 
@@ -116,22 +111,20 @@ public class CartControllerTest {
     void shouldReturnCartByUserId() throws Exception {
         CartDto cartDto = new CartDto(
                 1L,
-                1L,
                 1
         );
 
         List<CartDto> cart = List.of(cartDto);
 
-        when(cartService.findAllProductsFromCart(1L))
+        when(cartService.findAllProductsFromCart())
                 .thenReturn(cart);
 
         mockMvc.perform(get("/api/cart/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].userId").value(cartDto.userId()))
                 .andExpect(jsonPath("$[0].productId").value(cartDto.productId()))
                 .andExpect(jsonPath("$[0].quantity").value(cartDto.quantity()));
 
         verify(cartService)
-                .findAllProductsFromCart(1L);
+                .findAllProductsFromCart();
     }
 }

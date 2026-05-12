@@ -3,6 +3,7 @@ package com.fraus.spring.cart.web;
 import com.fraus.spring.cart.service.CartService;
 import com.fraus.spring.cart.web.Dto.CartDto;
 import com.fraus.spring.cart.web.Dto.QuantityRequest;
+import com.fraus.spring.globalException.exception.InvalidUserException;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,25 +35,27 @@ public class CartController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFromCart(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteFromCart(@PathVariable Long id) throws InvalidUserException {
         log.info("Controller deleteFromCart is called");
         cartService.deleteFromCart(id);
 
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping
-    public ResponseEntity<CartDto> updateQuantity(@RequestBody @Valid QuantityRequest quantityRequest) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<CartDto> updateQuantity(
+            @PathVariable Long id,
+            @RequestBody @Valid QuantityRequest quantityRequest) throws InvalidUserException {
         log.info("Controller updateQuantity is called");
-        CartDto result = cartService.updateQuantity(quantityRequest);
+        CartDto result = cartService.updateQuantity(id, quantityRequest);
 
         return ResponseEntity.ok().body(result);
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<CartDto>> findAllProductsFromCart(@PathVariable Long userId) {
+    @GetMapping
+    public ResponseEntity<List<CartDto>> findAllProductsFromCart() {
         log.info("Controller findAllProductsFromCart is called");
-        List<CartDto> cart = cartService.findAllProductsFromCart(userId);
+        List<CartDto> cart = cartService.findAllProductsFromCart();
 
         return ResponseEntity.ok().body(cart);
     }

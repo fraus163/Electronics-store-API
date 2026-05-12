@@ -65,13 +65,13 @@ public class ShopService {
     }
 
     public ProductDto updateProduct(Long id, ProductDto product) {
-//        if(!productRepository.existsById(id))
-//            throw new EntityNotFoundException("Not found element by id=" + id);
+        if(!productRepository.existsById(id))
+            throw new EntityNotFoundException("Not found element by id=" + id);
         Product updatedProduct = productRepository.save(new Product(
                 id,
                 product.brand(),
-                product.description(),
                 product.name(),
+                product.description(),
                 product.price(),
                 product.type(),
                 product.quantity()

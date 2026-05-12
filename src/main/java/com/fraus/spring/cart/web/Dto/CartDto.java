@@ -4,10 +4,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 public record CartDto(
-
-        @NotNull
-        Long userId,
-
         @NotNull
         Long productId,
 

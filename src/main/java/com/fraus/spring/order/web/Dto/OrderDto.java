@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 public record OrderDto (
         @NotNull
-        ProductDto productDto,
+        Long productId,
 
         @NotNull
         @Positive

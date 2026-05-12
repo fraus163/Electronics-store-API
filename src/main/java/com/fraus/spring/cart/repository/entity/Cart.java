@@ -3,6 +3,7 @@ package com.fraus.spring.cart.repository.entity;
 import com.fraus.spring.shop.repository.entity.Product;
 import com.fraus.spring.user.repository.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,5 +25,6 @@ public class Cart {
     private Product product;
 
     @Column(name = "quantity")
-    private Integer quantity;
+    @NotNull
+    private int quantity;
 }

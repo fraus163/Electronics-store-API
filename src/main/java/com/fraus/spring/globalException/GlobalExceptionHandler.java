@@ -1,5 +1,6 @@
 package com.fraus.spring.globalException;
 
+import com.fraus.spring.globalException.exception.InvalidUserException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import org.slf4j.Logger;
@@ -58,6 +59,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
+
+    @ExceptionHandler(InvalidUserException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidUserException(InvalidUserException e) {
+        log.error("Handle handleInvalidUserException", e);
+
+        var errorDto = new ErrorResponseDto(
+                "Forbidden",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
                 .body(errorDto);
     }
 }

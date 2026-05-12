@@ -5,6 +5,7 @@ import com.fraus.spring.cart.repository.CartRepository;
 import com.fraus.spring.cart.repository.entity.Cart;
 import com.fraus.spring.cart.web.Dto.CartDto;
 import com.fraus.spring.cart.web.Dto.QuantityRequest;
+import com.fraus.spring.globalException.exception.InvalidUserException;
 import com.fraus.spring.shop.repository.ProductRepository;
 import com.fraus.spring.shop.repository.entity.Product;
 import com.fraus.spring.user.repository.UserRepository;
@@ -12,10 +13,12 @@ import com.fraus.spring.user.repository.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -34,9 +37,11 @@ public class CartService {
     }
 
     public void addToCart(CartDto cartDto) {
-        User user = userRepository.findById(cartDto.userId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found: id=" + cartDto.userId()));
-
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext()
+                        .getAuthentication())
+                .getName();
+        User user = userRepository.findUserByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: username=" + username));
         Product product = productRepository.findById(cartDto.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Product not found: id=" + cartDto.productId()));
 
@@ -46,35 +51,53 @@ public class CartService {
                 product,
                 cartDto.quantity()
         ));
-        log.info("User id={} added product id={} in quantity={}", cartDto.userId(), cartDto.productId(), cartDto.quantity());
+        log.info("User id={} added product id={} in quantity={}", user.getId(), cartDto.productId(), cartDto.quantity());
     }
 
-    public void deleteFromCart(Long id) {
-        if (cartRepository.existsById(id))
+    public void deleteFromCart(Long id) throws InvalidUserException {
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext()
+                        .getAuthentication())
+                .getName();
+        User user = userRepository.findUserByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: username=" + username));
+        Cart cart = cartRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found: id=" + id));
+        if (Objects.equals(cart.getUser().getId(), user.getId()))
             cartRepository.removeById(id);
-        else throw new EntityNotFoundException("Cart not found: id=" + id);
+        else throw new InvalidUserException("Access denied to this resource");
         log.info("Cart id={} has been deleted", id);
     }
 
-    public CartDto updateQuantity(QuantityRequest quantityRequest) {
-        Cart cart = cartRepository.findById(quantityRequest.id())
-                .orElseThrow(() -> new EntityNotFoundException("Cart not found: id=" + quantityRequest.id()));
-        Cart result = cartRepository.save(new Cart(
-                cart.getId(),
-                cart.getUser(),
-                cart.getProduct(),
-                quantityRequest.quantity()
-        ));
+    public CartDto updateQuantity(Long id, QuantityRequest quantityRequest) throws InvalidUserException {
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext()
+                        .getAuthentication())
+                .getName();
+        User user = userRepository.findUserByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: username=" + username));
+        Cart cart = cartRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found: id=" + id));
+        if (Objects.equals(cart.getUser().getId(), user.getId())) {
+            Cart result = cartRepository.save(new Cart(
+                    cart.getId(),
+                    cart.getUser(),
+                    cart.getProduct(),
+                    quantityRequest.quantity()
+            ));
 
-        log.info("Cart id={} has been updated: new quantity={}", quantityRequest.id(), quantityRequest.quantity());
-        return cartMapper.toDto(result);
+            log.info("Cart id={} has been updated: new quantity={}", id, quantityRequest.quantity());
+            return cartMapper.toDto(result);
+        } else throw new InvalidUserException("Access denied to this resource");
     }
 
-    public List<CartDto> findAllProductsFromCart(Long userId) {
-        var cart = cartRepository.findCartByUser_Id(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Cart not found: user id=" + userId));
+    public List<CartDto> findAllProductsFromCart() {
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext()
+                        .getAuthentication())
+                .getName();
+        User user = userRepository.findUserByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: username=" + username));
+        var cart = cartRepository.findCartByUser_Id(user.getId());
 
-        log.info("Cart are displayed: userId={}", userId);
+        log.info("Cart are displayed: userId={}", user.getId());
         return cart.stream().map(cartMapper::toDto).toList();
     }
 }

@@ -5,9 +5,6 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 public record QuantityRequest (
         @NotNull
-        Long id,
-
-        @NotNull
         @PositiveOrZero
         int quantity
 ){

@@ -28,12 +28,10 @@ public class Product {
     private BrandType brand;
 
     @Column(name = "name", length = 30, unique = true)
-    @NotNull
     @NotBlank
     private String name;
 
     @Column(name = "description")
-    @NotNull
     @NotBlank
     private String description;
 

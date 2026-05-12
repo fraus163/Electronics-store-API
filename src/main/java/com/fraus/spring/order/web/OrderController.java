@@ -1,5 +1,6 @@
 package com.fraus.spring.order.web;
 
+import com.fraus.spring.globalException.exception.InvalidUserException;
 import com.fraus.spring.order.service.OrderService;
 import com.fraus.spring.order.web.Dto.OrderDto;
 import org.slf4j.Logger;
@@ -21,16 +22,16 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<OrderDto>> findAllOrdersByUserId(@PathVariable Long userId) {
+    @GetMapping
+    public ResponseEntity<List<OrderDto>> findAllOrdersByUser() {
         log.info("Controller findAllOrders is called");
 
         return ResponseEntity
-                .ok().body(orderService.findAllOrdersByUserId(userId));
+                .ok().body(orderService.findAllOrdersByUser());
     }
 
     @PostMapping("/{cartId}")
-    public ResponseEntity<Void> createOrder(@PathVariable Long cartId) {
+    public ResponseEntity<Void> createOrder(@PathVariable Long cartId) throws InvalidUserException {
         log.info("Controller createOrder is called");
         orderService.createOrder(cartId);
 
@@ -39,7 +40,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) {
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) throws InvalidUserException {
         log.info("Controller deleteOrder is called");
         orderService.deleteOrder(orderId);
 
@@ -48,7 +49,7 @@ public class OrderController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/start/{orderId}")
-    public ResponseEntity<Void> startOrder(@PathVariable Long orderId) {
+    public ResponseEntity<Void> startOrder(@PathVariable Long orderId) throws InvalidUserException {
         log.info("Controller startOrder is called");
         orderService.startOrder(orderId);
 

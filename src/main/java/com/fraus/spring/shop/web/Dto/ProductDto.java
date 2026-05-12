@@ -10,11 +10,9 @@ public record ProductDto (
         @NotNull
         BrandType brand,
 
-        @NotNull
         @NotBlank
         String name,
 
-        @NotNull
         @NotBlank
         String description,
 

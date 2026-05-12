@@ -15,7 +15,7 @@ public class OrderMapper {
 
     public OrderDto toDto(Order order) {
         return new OrderDto(
-                productMapper.toDto(order.getProduct()),
+                order.getProduct().getId(),
                 order.getQuantity(),
                 order.getCreated_at(),
                 order.getStatus()

@@ -5,6 +5,7 @@ import com.fraus.spring.order.service.OrderService;
 import com.fraus.spring.order.web.Dto.OrderDto;
 import com.fraus.spring.order.web.OrderController;
 import com.fraus.spring.shop.repository.entity.BrandType;
+import com.fraus.spring.shop.repository.entity.Product;
 import com.fraus.spring.shop.repository.entity.ProductType;
 import com.fraus.spring.shop.web.Dto.ProductDto;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,37 +36,23 @@ public class OrderControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    void shouldReturnAllOrdersById() throws Exception {
-        ProductDto productDto = new ProductDto(
-                BrandType.INTEL,
-                "Core Ultra 5 245K",
-                "Процессор",
-                new BigDecimal("21000"),
-                ProductType.CPU,
-                10
-        );
-
+    void shouldReturnAllOrdersByUser() throws Exception {
         LocalDateTime createdAt = LocalDateTime.now();
         String formattedDate = createdAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
         OrderDto orderDto = new OrderDto(
-                productDto,
+                1L,
                 1,
                 createdAt,
                 OrderStatus.CREATED
         );
 
-        when(orderService.findAllOrdersByUserId(1L))
+        when(orderService.findAllOrdersByUser())
                 .thenReturn(List.of(orderDto));
 
-        mockMvc.perform(get("/api/order/1"))
+        mockMvc.perform(get("/api/order"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].productDto.brand").value(BrandType.INTEL.toString()))
-                .andExpect(jsonPath("$[0].productDto.name").value("Core Ultra 5 245K"))
-                .andExpect(jsonPath("$[0].productDto.description").value("Процессор"))
-                .andExpect(jsonPath("$[0].productDto.price").value(21000))
-                .andExpect(jsonPath("$[0].productDto.type").value(ProductType.CPU.toString()))
-                .andExpect(jsonPath("$[0].productDto.quantity").value(10))
+                .andExpect(jsonPath("$[0].productId").value(1))
                 .andExpect(jsonPath("$[0].quantity").value(1))
                 .andExpect(jsonPath("$[0].created_at").value(formattedDate))
                 .andExpect(jsonPath("$[0].status").value(OrderStatus.CREATED.toString()));
