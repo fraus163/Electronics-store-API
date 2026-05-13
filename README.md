@@ -1,4 +1,4 @@
-# Online Shop
+# Electronics Store API
 
 ## О проекте
 
