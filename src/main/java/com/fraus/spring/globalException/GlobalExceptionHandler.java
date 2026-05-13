@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidUserException.class)
     public ResponseEntity<ErrorResponseDto> handleInvalidUserException(InvalidUserException e) {
-        log.error("Handle handleInvalidUserException", e);
+        log.error("Handle invalidUserException", e);
 
         var errorDto = new ErrorResponseDto(
                 "Forbidden",
@@ -74,6 +75,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
+                .body(errorDto);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(BadCredentialsException e) {
+        log.error("Handle badCredentialsException", e);
+
+        var errorDto = new ErrorResponseDto(
+                "Invalid username or password",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
                 .body(errorDto);
     }
 }

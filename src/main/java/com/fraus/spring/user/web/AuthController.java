@@ -65,6 +65,8 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
 
+        log.info("Successfully login user by username={}", loginRequest.username());
+
         return ResponseEntity.ok(new JwtResponse(jwt,
                 userDetails.getId(),
                 userDetails.getUsername(),
