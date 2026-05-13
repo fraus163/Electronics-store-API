@@ -121,8 +121,8 @@ Backend pet-project интернет-магазина электроники, р
 ### 1. Клонировать репозиторий
 
 ```bash
-git clone <repo-url>
-cd online-shop
+git clone https://github.com/fraus163/Electronics-store-API.git
+cd Electronics-store-API
 ```
 
 ### 2. Настроить базу данных
@@ -135,7 +135,7 @@ cd online-shop
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE="local"
-.\mvnw.cmd spring-boot:run
+mvn spring-boot:run
 ```
 
 ### 4. Запуск через переменные окружения
@@ -146,7 +146,7 @@ $env:DB_USERNAME="postgres"
 $env:DB_PASSWORD="password"
 $env:JWT_SECRET="your_secret_key_here_12345678901234567890"
 $env:JWT_EXPIRATION_MS="600000"
-.\mvnw.cmd spring-boot:run
+mvn spring-boot:run
 ```
 
 ## Swagger
@@ -161,14 +161,6 @@ http://localhost:8080/swagger-ui/index.html
 
 Запуск тестов:
 
-Linux / macOS:
-
 ```bash
-./mvnw test
-```
-
-Windows PowerShell:
-
-```powershell
-.\mvnw.cmd test
+mvn test
 ```
